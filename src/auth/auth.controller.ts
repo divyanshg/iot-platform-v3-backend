@@ -18,7 +18,6 @@ export class AuthController {
       const response = await this.authService.login(req.user);
       res.cookie('access_token', response.access_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
       });
 
       return new ApiResponse(200, 'Login successful', {
