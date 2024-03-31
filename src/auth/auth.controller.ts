@@ -1,14 +1,6 @@
 import { Response } from 'express';
 
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Request,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, Res, UseGuards } from '@nestjs/common';
 
 import ApiResponse from '../Response';
 import { AuthService } from './auth.service';
@@ -26,6 +18,7 @@ export class AuthController {
       const response = await this.authService.login(req.user);
       res.cookie('access_token', response.access_token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
       });
 
       return new ApiResponse(200, 'Login successful', {
