@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  properties Property[]
+  owner      User       @relation(fields: [ownerId], references: [id])
+  ownerId    String     @db.ObjectId
+  // layout     Layout     @relation(fields: [layoutId], references: [id])
+  // layoutId   String     @db.ObjectId
+}
+
+// model Layout {
+//   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+//   name      String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   rooms     Room[]
+// }
+
+model Property {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  room      Room     @relation(fields: [roomId], references: [id])
+  roomId    String   @db.ObjectId
+  name      String
+  values    Values[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Values {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String   @db.ObjectId
+  value      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model User {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  email      String   @unique
+  password   String
+  name       String
+  picture    String   @default("https://st3.depositphotos.com/6672868/13701/v/450/depositphotos_137014128-stock-illustration-user-profile-icon.jpg")
+  apiKey     String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  Room       Room[]
+  room_count Int      @default(0)
+}

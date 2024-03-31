@@ -1,0 +1,146 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../../node_modules/@prisma/clientv2"
+}
+
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL_NEW")
+}
+
+model Organization {
+    id           String         @id @default(auto()) @map("_id") @db.ObjectId
+    name         String
+    description  String
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime       @updatedAt
+    users        User[]
+    devices      Device[]
+    policies     DevicePolicy[]
+    certificates Certificates[]
+}
+
+model Certificates {
+    id             String          @id @default(auto()) @map("_id") @db.ObjectId
+    status         String
+    createdAt      DateTime        @default(now())
+    policies       DevicePolicy    @relation(fields: [policyId], references: [id])
+    policyId       String          @default("65fd60eb908e7bba0fd4a5fc") @db.ObjectId
+    devices        Device[]
+    organization   Organization    @relation(fields: [organizationId], references: [id])
+    organizationId String          @db.ObjectId
+    type           CertificateType @default(NORMAL)
+}
+
+enum CertificateType {
+    NORMAL
+    CLAIM
+}
+
+model User {
+    id             String        @id @default(auto()) @map("_id") @db.ObjectId
+    email          String        @unique
+    name           String
+    password       String
+    organization   Organization? @relation(fields: [organizationId], references: [id])
+    organizationId String?       @db.ObjectId
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+    groups         Group[]
+}
+
+model Group {
+    id          String      @id @default(auto()) @map("_id") @db.ObjectId
+    name        String
+    description String
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
+    User        User?       @relation(fields: [userId], references: [id])
+    userId      String?     @db.ObjectId
+    subGroups   SubGroup[]
+    dashboards  Dashboard[]
+}
+
+model SubGroup {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    name        String
+    description String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    Group       Group    @relation(fields: [groupId], references: [id])
+    groupId     String   @db.ObjectId
+    devices     Device[]
+}
+
+model DevicePolicy {
+    id              String         @id @default(auto()) @map("_id") @db.ObjectId
+    name            String
+    description     String
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+    devices         Device[]
+    organization    Organization   @relation(fields: [organizationId], references: [id])
+    organizationId  String         @db.ObjectId
+    allowConnect    Boolean
+    publishTopics   String[]
+    subscribeTopics String[]
+    certificate     Certificates[]
+}
+
+model Device {
+    id             String            @id @default(auto()) @map("_id") @db.ObjectId
+    name           String
+    description    String
+    topics         Json[]
+    createdAt      DateTime          @default(now())
+    updatedAt      DateTime          @updatedAt
+    subGroup       SubGroup?         @relation(fields: [subGroupId], references: [id])
+    subGroupId     String?           @db.ObjectId
+    organization   Organization      @relation(fields: [organizationId], references: [id])
+    organizationId String            @db.ObjectId
+    key            String
+    pastValues     HistoricalValue[]
+    policy         DevicePolicy?     @relation(fields: [policyId], references: [id])
+    policyId       String?           @db.ObjectId
+    isOnline       Boolean           @default(false)
+    lastSeen       DateTime?
+    certificate    Certificates?     @relation(fields: [certificateId], references: [id])
+    certificateId  String?           @db.ObjectId
+}
+
+model HistoricalValue {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    topic     String
+    payload   String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    device    Device   @relation(fields: [deviceId], references: [id])
+    deviceId  String   @db.ObjectId
+}
+
+model Dashboard {
+    id       String   @id @default(auto()) @map("_id") @db.ObjectId
+    name     String
+    layout   Layout   @relation(fields: [layoutId], references: [id])
+    layoutId String   @unique @db.ObjectId
+    widgets  Widget[]
+    Group    Group?   @relation(fields: [groupId], references: [id])
+    groupId  String?  @db.ObjectId
+}
+
+model Layout {
+    id        String     @id @default(auto()) @map("_id") @db.ObjectId
+    data      Json[]
+    Dashboard Dashboard?
+}
+
+model Widget {
+    id          String     @id @default(auto()) @map("_id") @db.ObjectId
+    type        String
+    title       String
+    description String
+    data        Json[]
+    config      Json
+    Dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+    dashboardId String?    @db.ObjectId
+}
